@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import api from '../../services/api';
 import ProductCard from '../../components/ui/ProductCard';
 import CategoryCard from '../../components/ui/CategoryCard';
 import SEO from '../../components/ui/SEO';
 import Breadcrumbs from '../../components/ui/Breadcrumbs';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { HiOutlineSearch } from 'react-icons/hi';
+import { searchProducts, searchCategories } from '../../services/firestore';
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,11 +17,22 @@ export default function Search() {
 
   useEffect(() => {
     if (query.length >= 2) {
+      let cancelled = false;
       setLoading(true);
-      api.get(`/search?q=${encodeURIComponent(query)}`)
-        .then(({ data }) => setResults(data && typeof data === 'object' && !Array.isArray(data) ? data : { productos: [], categorias: [] }))
-        .catch(() => setResults({ productos: [], categorias: [] }))
-        .finally(() => setLoading(false));
+      Promise.all([
+        searchProducts(query),
+        searchCategories(query),
+      ])
+        .then(([productos, categorias]) => {
+          if (!cancelled) setResults({ productos, categorias });
+        })
+        .catch(() => {
+          if (!cancelled) setResults({ productos: [], categorias: [] });
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => { cancelled = true; };
     } else {
       setResults({ productos: [], categorias: [] });
     }

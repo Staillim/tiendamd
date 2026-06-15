@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
-
-function ensureArray(data) {
-  return Array.isArray(data) ? data : [];
-}
+import { fetchCategories, fetchCategoryBySlug } from '../services/firestore';
 
 export function useCategories() {
   const [categories, setCategories] = useState([]);
@@ -11,10 +7,12 @@ export function useCategories() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get('/categories')
-      .then(({ data }) => setCategories(ensureArray(data)))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    fetchCategories()
+      .then(data => { if (!cancelled) setCategories(data); })
+      .catch(err => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   return { categories, loading, error };
@@ -27,11 +25,13 @@ export function useCategory(slug) {
 
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     setLoading(true);
-    api.get(`/categories/${slug}`)
-      .then(({ data }) => setCategory(data && typeof data === 'object' ? data : null))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    fetchCategoryBySlug(slug)
+      .then(data => { if (!cancelled) setCategory(data); })
+      .catch(err => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [slug]);
 
   return { category, loading, error };

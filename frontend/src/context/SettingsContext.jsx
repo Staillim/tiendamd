@@ -1,32 +1,34 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
+import { fetchSettings } from '../services/firestore';
 
 const SettingsContext = createContext(null);
 
+const defaultSettings = {
+  nombre: 'MarketPlay',
+  descripcion: 'Marketplace Premium',
+  whatsapp: '',
+  email: '',
+  direccion: '',
+  facebook: '',
+  instagram: '',
+  tiktok: '',
+  youtube: '',
+  tema: 'claro',
+  heroTitulo: 'Bienvenido a MarketPlay',
+  heroSubtitulo: 'Descubre productos increíbles',
+  logo: null,
+  favicon: null,
+  heroImagen: null,
+};
+
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState({
-    nombre: 'MarketPlay',
-    descripcion: 'Marketplace Premium',
-    whatsapp: '',
-    email: '',
-    direccion: '',
-    facebook: '',
-    instagram: '',
-    tiktok: '',
-    youtube: '',
-    tema: 'claro',
-    heroTitulo: 'Bienvenido a MarketPlay',
-    heroSubtitulo: 'Descubre productos increíbles',
-    logo: null,
-    favicon: null,
-    heroImagen: null,
-  });
+  const [settings, setSettings] = useState(defaultSettings);
   const [loading, setLoading] = useState(true);
 
-  const fetchSettings = useCallback(async () => {
+  const loadSettings = useCallback(async () => {
     try {
-      const { data } = await api.get('/settings');
-      if (data && !Array.isArray(data) && Object.keys(data).length > 0) {
+      const data = await fetchSettings();
+      if (data && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length > 0) {
         setSettings(prev => ({ ...prev, ...data }));
       }
     } catch {
@@ -37,8 +39,8 @@ export function SettingsProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    loadSettings();
+  }, [loadSettings]);
 
   useEffect(() => {
     if (settings.tema === 'oscuro') {
@@ -56,7 +58,7 @@ export function SettingsProvider({ children }) {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, loading, updateSettings, refetch: fetchSettings }}>
+    <SettingsContext.Provider value={{ settings, loading, updateSettings, refetch: loadSettings }}>
       {children}
     </SettingsContext.Provider>
   );

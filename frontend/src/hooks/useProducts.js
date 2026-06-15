@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
-
-function ensureArray(data) {
-  return Array.isArray(data) ? data : [];
-}
+import { fetchProducts, fetchProductBySlug } from '../services/firestore';
 
 export function useProducts(filters = {}) {
   const [products, setProducts] = useState([]);
@@ -11,16 +7,13 @@ export function useProducts(filters = {}) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (filters.destacado) params.append('destacado', 'true');
-    if (filters.categoria) params.append('categoria', filters.categoria);
-    if (filters.limit) params.append('limit', filters.limit);
-
+    let cancelled = false;
     setLoading(true);
-    api.get(`/products?${params.toString()}`)
-      .then(({ data }) => setProducts(ensureArray(data)))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    fetchProducts(filters)
+      .then(data => { if (!cancelled) setProducts(data); })
+      .catch(err => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [filters.destacado, filters.categoria, filters.limit]);
 
   return { products, loading, error };
@@ -33,11 +26,13 @@ export function useProduct(slug) {
 
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     setLoading(true);
-    api.get(`/products/slug/${slug}`)
-      .then(({ data }) => setProduct(data && typeof data === 'object' ? data : null))
-      .catch((err) => setError(err.response?.status === 404 ? 'Producto no encontrado' : err.message))
-      .finally(() => setLoading(false));
+    fetchProductBySlug(slug)
+      .then(data => { if (!cancelled) setProduct(data); })
+      .catch(err => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [slug]);
 
   return { product, loading, error };

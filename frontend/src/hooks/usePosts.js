@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api';
-
-function ensureArray(data) {
-  return Array.isArray(data) ? data : [];
-}
+import { fetchPosts, fetchPostBySlug } from '../services/firestore';
 
 export function usePosts() {
   const [posts, setPosts] = useState([]);
@@ -11,10 +7,12 @@ export function usePosts() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get('/posts')
-      .then(({ data }) => setPosts(ensureArray(data)))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    fetchPosts()
+      .then(data => { if (!cancelled) setPosts(data); })
+      .catch(err => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   return { posts, loading, error };
@@ -27,11 +25,13 @@ export function usePost(slug) {
 
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     setLoading(true);
-    api.get(`/posts/${slug}`)
-      .then(({ data }) => setPost(data && typeof data === 'object' ? data : null))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    fetchPostBySlug(slug)
+      .then(data => { if (!cancelled) setPost(data); })
+      .catch(err => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [slug]);
 
   return { post, loading, error };

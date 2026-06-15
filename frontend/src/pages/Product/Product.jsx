@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useProduct, useProducts } from '../../hooks/useProducts';
+import { useProduct } from '../../hooks/useProducts';
+import { fetchRelatedProducts } from '../../services/firestore';
 import ImageRenderer from '../../components/ui/ImageRenderer';
 import WhatsAppButton from '../../components/ui/WhatsAppButton';
 import ProductCard from '../../components/ui/ProductCard';
@@ -17,10 +18,13 @@ export default function Product() {
   const { slug } = useParams();
   const { product, loading, error } = useProduct(slug);
   const { settings } = useSettings();
-  const { products: related } = useProducts({
-    categoria: product?.categoria,
-    limit: 5,
-  });
+  const [related, setRelated] = useState([]);
+
+  useEffect(() => {
+    if (product?.categoria) {
+      fetchRelatedProducts(product.categoria, product.id).then(setRelated).catch(() => {});
+    }
+  }, [product?.categoria, product?.id]);
 
   const [currentImage, setCurrentImage] = useState(0);
 
