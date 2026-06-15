@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import api from '../../services/api';
+import { adminFetchDashboard } from '../../services/firestore';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { HiOutlineTag, HiOutlineCollection, HiOutlineDocumentText, HiOutlineEye } from 'react-icons/hi';
 
@@ -10,8 +10,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/admin/dashboard')
-      .then(({ data }) => setStats(data))
+    adminFetchDashboard()
+      .then(setStats)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -43,11 +43,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(({ label, value, icon: Icon, color, to }) => {
           const content = (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card p-6"
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>

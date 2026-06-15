@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import api from '../../services/api';
+import { adminFetchProducts, adminDeleteProduct, adminDuplicateProduct } from '../../services/firestore';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ImageRenderer from '../../components/ui/ImageRenderer';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash, HiOutlineDuplicate, HiOutlineSearch } from 'react-icons/hi';
@@ -14,8 +13,8 @@ export default function ProductList() {
 
   const fetchProducts = () => {
     setLoading(true);
-    api.get('/admin/productos')
-      .then(({ data }) => setProducts(data))
+    adminFetchProducts()
+      .then(setProducts)
       .catch(() => toast.error('Error al cargar productos'))
       .finally(() => setLoading(false));
   };
@@ -25,7 +24,7 @@ export default function ProductList() {
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar este producto?')) return;
     try {
-      await api.delete(`/admin/productos/${id}`);
+      await adminDeleteProduct(id);
       toast.success('Producto eliminado');
       fetchProducts();
     } catch {
@@ -35,7 +34,7 @@ export default function ProductList() {
 
   const handleDuplicate = async (id) => {
     try {
-      await api.post(`/admin/productos/${id}/duplicar`);
+      await adminDuplicateProduct(id);
       toast.success('Producto duplicado');
       fetchProducts();
     } catch {

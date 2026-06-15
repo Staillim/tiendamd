@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import { adminFetchCategories, adminDeleteCategory } from '../../services/firestore';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash } from 'react-icons/hi';
 import toast from 'react-hot-toast';
@@ -11,8 +11,8 @@ export default function CategoryList() {
 
   const fetchCategories = () => {
     setLoading(true);
-    api.get('/admin/categorias')
-      .then(({ data }) => setCategories(data))
+    adminFetchCategories()
+      .then(setCategories)
       .catch(() => toast.error('Error al cargar categorías'))
       .finally(() => setLoading(false));
   };
@@ -22,7 +22,7 @@ export default function CategoryList() {
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar esta categoría?')) return;
     try {
-      await api.delete(`/admin/categorias/${id}`);
+      await adminDeleteCategory(id);
       toast.success('Categoría eliminada');
       fetchCategories();
     } catch {

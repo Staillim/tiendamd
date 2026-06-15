@@ -1,16 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, where, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, query, where, orderBy, limit, doc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import app from './firebase';
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
-};
-
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 function formatDoc(doc) {
@@ -133,3 +123,92 @@ export async function searchCategories(queryText) {
 }
 
 export default db;
+
+// --- ADMIN OPERATIONS (require auth) ---
+
+export async function adminFetchProducts() {
+  const snapshot = await getDocs(collection(db, 'productos'));
+  return snapshot.docs.map(formatDoc).sort(sortByDateDesc);
+}
+
+export async function adminSaveProduct(data, editId) {
+  const payload = { ...data, fecha: serverTimestamp() };
+  if (editId) {
+    await updateDoc(doc(db, 'productos', editId), payload);
+    return editId;
+  }
+  const ref = await addDoc(collection(db, 'productos'), payload);
+  return ref.id;
+}
+
+export async function adminDeleteProduct(id) {
+  await deleteDoc(doc(db, 'productos', id));
+}
+
+export async function adminDuplicateProduct(id) {
+  const snap = await getDoc(doc(db, 'productos', id));
+  if (!snap.exists()) throw new Error('No encontrado');
+  const data = snap.data();
+  const nuevo = { ...data, nombre: `${data.nombre} (copia)`, visitas: 0, fecha: serverTimestamp() };
+  await addDoc(collection(db, 'productos'), nuevo);
+}
+
+export async function adminFetchCategories() {
+  const snapshot = await getDocs(collection(db, 'categorias'));
+  return snapshot.docs.map(formatDoc);
+}
+
+export async function adminSaveCategory(data, editId) {
+  const payload = { ...data, fecha: serverTimestamp() };
+  if (editId) {
+    await updateDoc(doc(db, 'categorias', editId), payload);
+    return editId;
+  }
+  const ref = await addDoc(collection(db, 'categorias'), payload);
+  return ref.id;
+}
+
+export async function adminDeleteCategory(id) {
+  await deleteDoc(doc(db, 'categorias', id));
+}
+
+export async function adminFetchPosts() {
+  const snapshot = await getDocs(collection(db, 'publicaciones'));
+  return snapshot.docs.map(formatDoc).sort(sortByDateDesc);
+}
+
+export async function adminSavePost(data, editId) {
+  const payload = { ...data, fecha: serverTimestamp() };
+  if (editId) {
+    await updateDoc(doc(db, 'publicaciones', editId), payload);
+    return editId;
+  }
+  const ref = await addDoc(collection(db, 'publicaciones'), payload);
+  return ref.id;
+}
+
+export async function adminDeletePost(id) {
+  await deleteDoc(doc(db, 'publicaciones', id));
+}
+
+export async function adminFetchDashboard() {
+  const [prodSnap, catSnap, pubSnap] = await Promise.all([
+    getDocs(collection(db, 'productos')),
+    getDocs(collection(db, 'categorias')),
+    getDocs(collection(db, 'publicaciones')),
+  ]);
+  const productos = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const totalVisitas = productos.reduce((sum, p) => sum + (p.visitas || 0), 0);
+  const masVistos = productos.sort((a, b) => (b.visitas || 0) - (a.visitas || 0)).slice(0, 5);
+  return {
+    totalProductos: prodSnap.size,
+    totalCategorias: catSnap.size,
+    totalPublicaciones: pubSnap.size,
+    totalVisitas,
+    masVistos,
+  };
+}
+
+export async function adminSaveSettings(data) {
+  await updateDoc(doc(db, 'configuracion', 'general'), data);
+}

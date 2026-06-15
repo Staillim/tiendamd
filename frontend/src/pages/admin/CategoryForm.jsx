@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import { adminSaveCategory, adminFetchCategories } from '../../services/firestore';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ImageUploader from '../../components/ui/ImageUploader';
 import { HiOutlineSave, HiOutlineArrowLeft } from 'react-icons/hi';
@@ -24,8 +24,8 @@ export default function CategoryForm() {
   useEffect(() => {
     if (isEdit) {
       setLoading(true);
-      api.get('/admin/categorias')
-        .then(({ data }) => {
+      adminFetchCategories()
+        .then((data) => {
           const c = data.find(x => x.id === id);
           if (c) {
             setForm({
@@ -56,13 +56,8 @@ export default function CategoryForm() {
     if (!form.nombre.trim()) return toast.error('Nombre es requerido');
     setSaving(true);
     try {
-      if (isEdit) {
-        await api.put(`/admin/categorias/${id}`, form);
-        toast.success('Categoría actualizada');
-      } else {
-        await api.post('/admin/categorias', form);
-        toast.success('Categoría creada');
-      }
+      await adminSaveCategory(form, isEdit ? id : null);
+      toast.success(isEdit ? 'Categoría actualizada' : 'Categoría creada');
       navigate('/admin-marketplay-2026/categorias');
     } catch {
       toast.error('Error al guardar');
@@ -125,11 +120,7 @@ export default function CategoryForm() {
 
         <div className="card p-6 space-y-5">
           <h3 className="font-semibold text-gray-900 dark:text-white">Banner</h3>
-          <ImageUploader
-            label="Banner de la categoría"
-            value={form.banner}
-            onChange={handleBannerChange}
-          />
+          <ImageUploader label="Banner de la categoría" value={form.banner} onChange={handleBannerChange} />
         </div>
 
         <div className="flex items-center gap-3">

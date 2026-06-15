@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import api from '../../services/api';
+import { adminSaveProduct, adminFetchCategories, adminFetchProducts } from '../../services/firestore';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ImageUploader from '../../components/ui/ImageUploader';
 import { HiOutlineSave, HiOutlineArrowLeft, HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi';
@@ -32,11 +31,11 @@ export default function ProductForm() {
   });
 
   useEffect(() => {
-    api.get('/admin/categorias').then(({ data }) => setCategories(data)).catch(() => {});
+    adminFetchCategories().then(setCategories).catch(() => {});
     if (isEdit) {
       setLoading(true);
-      api.get(`/admin/productos`)
-        .then(({ data }) => {
+      adminFetchProducts()
+        .then((data) => {
           const p = data.find(x => x.id === id);
           if (p) {
             setForm({
@@ -99,13 +98,8 @@ export default function ProductForm() {
         etiquetas: form.etiquetas ? form.etiquetas.split(',').map(t => t.trim()).filter(Boolean) : [],
       };
 
-      if (isEdit) {
-        await api.put(`/admin/productos/${id}`, data);
-        toast.success('Producto actualizado');
-      } else {
-        await api.post('/admin/productos', data);
-        toast.success('Producto creado');
-      }
+      await adminSaveProduct(data, isEdit ? id : null);
+      toast.success(isEdit ? 'Producto actualizado' : 'Producto creado');
       navigate('/admin-marketplay-2026/productos');
     } catch (err) {
       toast.error('Error al guardar producto');

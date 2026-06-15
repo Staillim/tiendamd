@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import { adminFetchPosts, adminDeletePost } from '../../services/firestore';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { HiOutlinePlus, HiOutlinePencil, HiOutlineTrash } from 'react-icons/hi';
 import toast from 'react-hot-toast';
@@ -11,8 +11,8 @@ export default function PostList() {
 
   const fetchPosts = () => {
     setLoading(true);
-    api.get('/admin/publicaciones')
-      .then(({ data }) => setPosts(data))
+    adminFetchPosts()
+      .then(setPosts)
       .catch(() => toast.error('Error al cargar publicaciones'))
       .finally(() => setLoading(false));
   };
@@ -22,7 +22,7 @@ export default function PostList() {
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar esta publicación?')) return;
     try {
-      await api.delete(`/admin/publicaciones/${id}`);
+      await adminDeletePost(id);
       toast.success('Publicación eliminada');
       fetchPosts();
     } catch {
