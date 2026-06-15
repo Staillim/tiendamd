@@ -8,18 +8,26 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    try {
+      const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        setUser(firebaseUser);
+        setLoading(false);
+        if (firebaseUser) {
+          firebaseUser.getIdToken().then((token) => {
+            localStorage.setItem('marketplay_token', token);
+          }).catch(() => {});
+        } else {
+          localStorage.removeItem('marketplay_token');
+        }
+      }, (error) => {
+        console.error('Auth error:', error);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.error('Firebase auth init error:', e);
       setLoading(false);
-      if (firebaseUser) {
-        firebaseUser.getIdToken().then((token) => {
-          localStorage.setItem('marketplay_token', token);
-        });
-      } else {
-        localStorage.removeItem('marketplay_token');
-      }
-    });
-    return () => unsubscribe();
+    }
   }, []);
 
   const login = async (email, password) => {
