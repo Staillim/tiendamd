@@ -26,7 +26,7 @@ export function SettingsProvider({ children }) {
   const fetchSettings = useCallback(async () => {
     try {
       const { data } = await api.get('/settings');
-      if (data && Object.keys(data).length > 0) {
+      if (data && !Array.isArray(data) && Object.keys(data).length > 0) {
         setSettings(prev => ({ ...prev, ...data }));
       }
     } catch {

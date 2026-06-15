@@ -20,7 +20,7 @@ export default function Search() {
     if (query.length >= 2) {
       setLoading(true);
       api.get(`/search?q=${encodeURIComponent(query)}`)
-        .then(({ data }) => setResults(data))
+        .then(({ data }) => setResults(data && typeof data === 'object' && !Array.isArray(data) ? data : { productos: [], categorias: [] }))
         .catch(() => setResults({ productos: [], categorias: [] }))
         .finally(() => setLoading(false));
     } else {
