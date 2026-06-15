@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     if (typeof response.data === 'string' && response.data.trim().startsWith('<!')) {
-      return Promise.reject(new Error('API no disponible'));
+      return { ...response, data: null, status: 204 };
     }
     return response;
   },
