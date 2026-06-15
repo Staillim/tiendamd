@@ -15,12 +15,8 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    const ct = response.headers['content-type'] || '';
-    if (typeof response.data === 'string' && (ct.includes('text/html') || response.data.trim().startsWith('<'))) {
-      return Promise.reject(new Error('Invalid API response'));
-    }
-    if (response.data && typeof response.data === 'object' && !Array.isArray(response.data) && !Object.keys(response.data).length) {
-      return Promise.reject(new Error('Invalid API response'));
+    if (typeof response.data === 'string' && response.data.trim().startsWith('<!')) {
+      return Promise.reject(new Error('API no disponible'));
     }
     return response;
   },
