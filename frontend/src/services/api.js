@@ -14,7 +14,16 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const ct = response.headers['content-type'] || '';
+    if (typeof response.data === 'string' && (ct.includes('text/html') || response.data.trim().startsWith('<'))) {
+      return Promise.reject(new Error('Invalid API response'));
+    }
+    if (response.data && typeof response.data === 'object' && !Array.isArray(response.data) && !Object.keys(response.data).length) {
+      return Promise.reject(new Error('Invalid API response'));
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('marketplay_token');
