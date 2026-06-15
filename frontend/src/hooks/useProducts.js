@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
+function ensureArray(data) {
+  return Array.isArray(data) ? data : [];
+}
+
 export function useProducts(filters = {}) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +18,7 @@ export function useProducts(filters = {}) {
 
     setLoading(true);
     api.get(`/products?${params.toString()}`)
-      .then(({ data }) => setProducts(data))
+      .then(({ data }) => setProducts(ensureArray(data)))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [filters.destacado, filters.categoria, filters.limit]);
@@ -31,7 +35,7 @@ export function useProduct(slug) {
     if (!slug) return;
     setLoading(true);
     api.get(`/products/slug/${slug}`)
-      .then(({ data }) => setProduct(data))
+      .then(({ data }) => setProduct(data && typeof data === 'object' ? data : null))
       .catch((err) => setError(err.response?.status === 404 ? 'Producto no encontrado' : err.message))
       .finally(() => setLoading(false));
   }, [slug]);

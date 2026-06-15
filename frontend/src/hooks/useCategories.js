@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
+function ensureArray(data) {
+  return Array.isArray(data) ? data : [];
+}
+
 export function useCategories() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,7 +12,7 @@ export function useCategories() {
 
   useEffect(() => {
     api.get('/categories')
-      .then(({ data }) => setCategories(data))
+      .then(({ data }) => setCategories(ensureArray(data)))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -25,7 +29,7 @@ export function useCategory(slug) {
     if (!slug) return;
     setLoading(true);
     api.get(`/categories/${slug}`)
-      .then(({ data }) => setCategory(data))
+      .then(({ data }) => setCategory(data && typeof data === 'object' ? data : null))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [slug]);
