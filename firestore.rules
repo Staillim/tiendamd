@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Productos: lectura pública, escritura solo admins autenticados
+    match /productos/{productId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasAll(['nombre', 'precio', 'estado']);
+    }
+
+    // Categorías: lectura pública, escritura solo admins
+    match /categorias/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Publicaciones (Blog): lectura pública, escritura solo admins
+    match /publicaciones/{postId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Configuración: lectura pública, escritura solo admins
+    match /configuracion/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Visitas: solo admins pueden leer/escribir
+    match /visitas/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Denegar todo lo demás
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
